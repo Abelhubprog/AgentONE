@@ -48,6 +48,18 @@ Located in `docs/advanced/`:
 | **[VISUAL_FLOWS.md](./advanced/VISUAL_FLOWS.md)** | Mermaid diagrams for all workflows | 🟢 Beginner-Friendly |
 | **[WORKFLOW_PATTERNS.md](./advanced/WORKFLOW_PATTERNS.md)** | Comprehensive workflow recipes | 🟡 Intermediate |
 
+### 📊 Strategic Planning
+
+Located in `docs/strategic/`:
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| **[EXECUTIVE_SUMMARY.md](./strategic/EXECUTIVE_SUMMARY.md)** | Strategic analysis overview | Leadership, All |
+| **[DEEP_ANALYSIS_PROMPT.md](./strategic/DEEP_ANALYSIS_PROMPT.md)** | Comprehensive analysis framework | Tech Leads, Architects |
+
+**Purpose**: Transform AgentONE from current state to enterprise-grade production system.  
+**Scope**: Reality assessment, cleanup strategy, production readiness, innovation roadmap, 16-week development plan.
+
 ### 📋 Design Documents
 
 Located in `docs/design/`:
