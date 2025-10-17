@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft. All rights reserved.
 
-"""
-Prowzi Core Agents - Specialized AI Agents for Autonomous Collaboration
+"""Prowzi Core Agents - Specialized AI Agents for Autonomous Collaboration
 
 This module defines the five core agents that power the Prowzi system:
 1. ResearchAgent - Information gathering and fact verification

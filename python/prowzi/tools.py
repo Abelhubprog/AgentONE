@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft. All rights reserved.
 
-"""
-Prowzi Tools - Comprehensive tool ecosystem for autonomous agents
+"""Prowzi Tools - Comprehensive tool ecosystem for autonomous agents
 
 This module provides a rich set of tools that Prowzi agents can use to:
 - Search and retrieve information
@@ -23,7 +22,6 @@ import re
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Any
-
 
 # ============================================================================
 # Information Retrieval Tools
@@ -57,7 +55,7 @@ def search_knowledge_base(
         - Learn from experience and adapt
         - Use tools and external resources
         - Plan and execute multi-step tasks
-        
+
         Key benefits: Scalability, efficiency, 24/7 operation, consistency
         """,
         "multi-agent systems": """
@@ -66,7 +64,7 @@ def search_knowledge_base(
         - Communicate and coordinate with each other
         - Solve complex problems collaboratively
         - Self-organize to achieve goals
-        
+
         Common patterns: Sequential, concurrent, hierarchical, peer-to-peer
         """,
         "microsoft agent framework": """
@@ -136,16 +134,20 @@ def calculate(
             if len(parts) == 2:
                 percent_part = parts[0].replace("%", "").strip()
                 value_part = parts[1].strip()
-                percent = float(eval(percent_part, {"__builtins__": {}}))
-                value = float(eval(value_part, {"__builtins__": {}}))
+                # SECURITY: Use ast.literal_eval instead of eval for safe evaluation
+                import ast
+                percent = float(ast.literal_eval(percent_part))
+                value = float(ast.literal_eval(value_part))
                 result = (percent / 100) * value
                 return f"{result}"
 
-        # Safe evaluation with restricted builtins
-        result = eval(expression, {"__builtins__": {}}, {})
+        # SECURITY: Use ast.literal_eval for safe evaluation of literals only
+        # This prevents code injection while allowing numbers, strings, lists, etc.
+        import ast
+        result = ast.literal_eval(expression)
         return str(result)
     except Exception as e:
-        return f"Error evaluating expression: {str(e)}"
+        return f"Error evaluating expression: {e!s}"
 
 
 def count_items(
@@ -233,7 +235,7 @@ def validate_python_syntax(
             "offset": e.offset,
         }
     except Exception as e:
-        return {"valid": False, "message": f"Error: {str(e)}"}
+        return {"valid": False, "message": f"Error: {e!s}"}
 
 
 def format_code_snippet(
@@ -310,7 +312,7 @@ def read_text_file(
 
         return path.read_text(encoding="utf-8")
     except Exception as e:
-        return f"Error reading file: {str(e)}"
+        return f"Error reading file: {e!s}"
 
 
 def write_text_file(
@@ -332,7 +334,7 @@ def write_text_file(
         path.write_text(content, encoding="utf-8")
         return f"Successfully wrote {len(content)} characters to {file_path}"
     except Exception as e:
-        return f"Error writing file: {str(e)}"
+        return f"Error writing file: {e!s}"
 
 
 def list_files(
@@ -358,7 +360,7 @@ def list_files(
         files = [str(f) for f in path.glob(pattern) if f.is_file()]
         return files if files else [f"No files matching '{pattern}' found in {directory}"]
     except Exception as e:
-        return [f"Error listing files: {str(e)}"]
+        return [f"Error listing files: {e!s}"]
 
 
 def parse_json(
@@ -377,7 +379,7 @@ def parse_json(
     except json.JSONDecodeError as e:
         return f"JSON parse error at line {e.lineno}, column {e.colno}: {e.msg}"
     except Exception as e:
-        return f"Error parsing JSON: {str(e)}"
+        return f"Error parsing JSON: {e!s}"
 
 
 def create_json(
@@ -398,7 +400,7 @@ def create_json(
             return json.dumps(data, indent=2, ensure_ascii=False)
         return json.dumps(data, ensure_ascii=False)
     except Exception as e:
-        return f"Error creating JSON: {str(e)}"
+        return f"Error creating JSON: {e!s}"
 
 
 # ============================================================================

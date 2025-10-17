@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-import pickle
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -98,8 +97,21 @@ class CheckpointManager:
         )
 
         try:
-            with open(checkpoint_path, "wb") as f:
-                pickle.dump(checkpoint, f)
+            # SECURITY: Use JSON instead of pickle to prevent arbitrary code execution
+            # Convert dataclasses to dict for JSON serialization
+            checkpoint_dict = {
+                "intent": checkpoint.intent.__dict__ if hasattr(checkpoint.intent, '__dict__') else checkpoint.intent,
+                "plan": checkpoint.plan.__dict__ if hasattr(checkpoint.plan, '__dict__') else checkpoint.plan,
+                "search_results": checkpoint.search_results,
+                "verification": checkpoint.verification.__dict__ if hasattr(checkpoint.verification, '__dict__') else checkpoint.verification,
+                "draft": checkpoint.draft.__dict__ if hasattr(checkpoint.draft, '__dict__') else checkpoint.draft,
+                "initial_evaluation": checkpoint.initial_evaluation.__dict__ if hasattr(checkpoint.initial_evaluation, '__dict__') else checkpoint.initial_evaluation,
+                "turnitin": checkpoint.turnitin,
+                "stage_metrics": checkpoint.stage_metrics,
+            }
+
+            with open(checkpoint_path, "w", encoding="utf-8") as f:
+                json.dump(checkpoint_dict, f, indent=2)
 
             metadata_dict = {
                 "checkpoint_id": checkpoint_meta.checkpoint_id,
@@ -109,13 +121,13 @@ class CheckpointManager:
                 "prompt": checkpoint_meta.prompt,
                 "stage_metrics": checkpoint_meta.stage_metrics,
             }
-            with open(metadata_path, "w") as f:
+            with open(metadata_path, "w", encoding="utf-8") as f:
                 json.dump(metadata_dict, f, indent=2)
 
             logger.info("Checkpoint saved: %s (stage: %s)", checkpoint_id, stage)
             return checkpoint_id
 
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.exception("Failed to save checkpoint %s: %s", checkpoint_id, exc)
             return ""
 
@@ -131,11 +143,13 @@ class CheckpointManager:
             return None
 
         try:
-            with open(checkpoint_path, "rb") as f:
-                checkpoint = pickle.load(f)
+            # SECURITY: Use JSON instead of pickle to prevent arbitrary code execution
+            # pickle.load() can execute malicious code - JSON is safe
+            with open(checkpoint_path, "r", encoding="utf-8") as f:
+                checkpoint = json.load(f)
             logger.info("Checkpoint loaded: %s", checkpoint_id)
             return checkpoint
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.exception("Failed to load checkpoint %s: %s", checkpoint_id, exc)
             return None
 
@@ -160,7 +174,7 @@ class CheckpointManager:
                             stage_metrics=data.get("stage_metrics", {}),
                         )
                     )
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning("Failed to read checkpoint metadata %s: %s", metadata_path, exc)
 
         return sorted(checkpoints, key=lambda c: c.created_at, reverse=True)
@@ -180,7 +194,7 @@ class CheckpointManager:
                 metadata_path.unlink()
             logger.info("Checkpoint deleted: %s", checkpoint_id)
             return True
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.exception("Failed to delete checkpoint %s: %s", checkpoint_id, exc)
             return False
 

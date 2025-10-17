@@ -1,5 +1,4 @@
-"""
-Intent & Context Agent
+"""Intent & Context Agent
 
 Entry point for Prowzi system. Analyzes user requirements and parses documents.
 Uses Claude 4.5 Sonnet (1M context) for document parsing and GPT-4o for intent analysis.
@@ -13,22 +12,24 @@ Responsibilities:
     - Initialize ACE context for workflow
 """
 
-from dataclasses import dataclass
-from typing import Dict, Any, List, Optional
-from pathlib import Path
 import json
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from agent_framework import ChatAgent
 from agent_framework.openai import OpenAIChatClient
 
 from prowzi.config import get_config
-from prowzi.tools.parsing_tools import parse_document, parse_multiple_documents
+from prowzi.config.logging_config import get_logger
+from prowzi.tools.parsing_tools import parse_multiple_documents
+
+logger = get_logger(__name__)
 
 
 @dataclass
 class IntentAnalysis:
-    """
-    Structured output from Intent Agent.
+    """Structured output from Intent Agent.
 
     Attributes:
         document_type: Type of document (e.g., "literature_review", "research_paper")
@@ -88,8 +89,7 @@ class IntentAnalysis:
 
 
 class IntentAgent:
-    """
-    Intent & Context Agent implementation.
+    """Intent & Context Agent implementation.
 
     This agent serves as the entry point for the Prowzi workflow.
     It analyzes user intent and parses documents to understand requirements.
@@ -105,8 +105,7 @@ class IntentAgent:
     """
 
     def __init__(self, config=None):
-        """
-        Initialize Intent Agent.
+        """Initialize Intent Agent.
 
         Args:
             config: Optional ProwziConfig instance. Uses default if not provided.
@@ -121,7 +120,7 @@ class IntentAgent:
         self.chat_client = OpenAIChatClient(
             api_key=self.config.openrouter_api_key,
             base_url=self.config.openrouter_base_url,
-            model=model_config.name,
+            model_id=model_config.name,
         )
 
         # System prompts
@@ -213,8 +212,7 @@ Be thorough in inferring requirements. Academic writing has many implicit standa
         document_paths: Optional[List[str | Path]] = None,
         additional_context: Optional[Dict[str, Any]] = None
     ) -> IntentAnalysis:
-        """
-        Analyze user intent and parse documents.
+        """Analyze user intent and parse documents.
 
         Args:
             prompt: User's research prompt/request
@@ -233,23 +231,23 @@ Be thorough in inferring requirements. Academic writing has many implicit standa
             >>> print(f"Document type: {result.document_type}")
             >>> print(f"Confidence: {result.confidence_score}")
         """
-        print("🔍 Intent Agent: Starting analysis...")
+        logger.info("🔍 Intent Agent: Starting analysis...")
 
         # Step 1: Parse documents if provided
         parsed_documents = []
         document_summaries = []
 
         if document_paths:
-            print(f"📄 Parsing {len(document_paths)} documents...")
+            logger.info(f"📄 Parsing {len(document_paths)} documents...")
             parsed_documents = parse_multiple_documents(document_paths, extract_metadata=True)
 
             # Generate summaries using parsing agent
             for i, doc_result in enumerate(parsed_documents, 1):
                 if "error" in doc_result:
-                    print(f"  ⚠️  Error parsing document {i}: {doc_result['error']}")
+                    logger.warning(f"  ⚠️  Error parsing document {i}: {doc_result['error']}")
                     continue
 
-                print(f"  ✓ Parsed: {doc_result['file_name']} ({doc_result['word_count']} words)")
+                logger.debug(f"  ✓ Parsed: {doc_result['file_name']} ({doc_result['word_count']} words)")
 
                 # Create summary using parsing agent
                 summary_prompt = f"""Analyze this document and provide a concise summary:
@@ -281,7 +279,7 @@ Keep your summary concise but comprehensive."""
                 })
 
         # Step 2: Analyze intent
-        print("🎯 Analyzing user intent...")
+        logger.info("🎯 Analyzing user intent...")
 
         # Build context for intent analysis
         context_parts = [
@@ -340,21 +338,21 @@ Keep your summary concise but comprehensive."""
                 }
             )
 
-            print("✅ Intent analysis complete!")
-            print(f"   Document type: {analysis.document_type}")
-            print(f"   Field: {analysis.field}")
-            print(f"   Level: {analysis.academic_level}")
-            print(f"   Target: {analysis.word_count} words")
-            print(f"   Confidence: {analysis.confidence_score:.2f}")
+            logger.info("✅ Intent analysis complete!")
+            logger.info(f"   Document type: {analysis.document_type}")
+            logger.info(f"   Field: {analysis.field}")
+            logger.info(f"   Level: {analysis.academic_level}")
+            logger.info(f"   Target: {analysis.word_count} words")
+            logger.info(f"   Confidence: {analysis.confidence_score:.2f}")
 
             if analysis.missing_info:
-                print(f"   ⚠️  Missing info: {', '.join(analysis.missing_info)}")
+                logger.warning(f"   ⚠️  Missing info: {', '.join(analysis.missing_info)}")
 
             return analysis
 
         except Exception as e:
-            print(f"❌ Error parsing intent analysis: {e}")
-            print(f"Raw response: {intent_response.response}")
+            logger.error(f"❌ Error parsing intent analysis: {e}")
+            logger.debug(f"Raw response: {intent_response.response}")
 
             # Return default analysis
             return IntentAnalysis(
@@ -376,8 +374,7 @@ Keep your summary concise but comprehensive."""
         analysis: IntentAnalysis,
         user_responses: Dict[str, Any]
     ) -> IntentAnalysis:
-        """
-        Update analysis with user clarifications.
+        """Update analysis with user clarifications.
 
         Args:
             analysis: Original IntentAnalysis
@@ -386,7 +383,7 @@ Keep your summary concise but comprehensive."""
         Returns:
             Updated IntentAnalysis
         """
-        print("🔄 Updating intent analysis with clarifications...")
+        logger.info("🔄 Updating intent analysis with clarifications...")
 
         # Update fields from user responses
         if "citation_style" in user_responses:
@@ -410,6 +407,6 @@ Keep your summary concise but comprehensive."""
         # Increase confidence score
         analysis.confidence_score = min(1.0, analysis.confidence_score + 0.2)
 
-        print("✅ Intent analysis updated!")
+        logger.info("✅ Intent analysis updated!")
 
         return analysis

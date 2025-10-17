@@ -171,7 +171,7 @@ class TelemetryCollector:
             with open(telemetry_path, "w") as f:
                 json.dump(data, f, indent=2)
 
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("Failed to persist telemetry for session %s: %s", session_id, exc)
 
     def load_session(self, session_id: str) -> Optional[WorkflowMetrics]:
@@ -218,7 +218,7 @@ class TelemetryCollector:
             self.active_sessions[session_id] = metrics
             return metrics
 
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.exception("Failed to load telemetry for session %s: %s", session_id, exc)
             return None
 
@@ -244,7 +244,7 @@ class TelemetryCollector:
                         "stages_completed": len([s for s in data.get("stages", []) if s["status"] == "completed"]),
                     }
                 )
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning("Failed to read telemetry file %s: %s", telemetry_file, exc)
 
         return sessions

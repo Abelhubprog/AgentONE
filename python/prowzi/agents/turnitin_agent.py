@@ -1,5 +1,4 @@
-"""
-Turnitin Agent
+"""Turnitin Agent
 
 Automates plagiarism and AI detection workflows using Browser automation
 clients (Browserbase + Gemini CUA) with redrafting loops until quality
@@ -276,9 +275,9 @@ class TurnitinAgent:
         self.chat_client = OpenAIChatClient(
             api_key=self.config.openrouter_api_key,
             base_url=self.config.openrouter_base_url,
-            model=self.model_config.name,
-            temperature=self.agent_config.temperature,
-            max_tokens=self.agent_config.max_tokens,
+            model_id=self.model_config.name,
+            # NOTE: temperature and max_tokens not supported by OpenAIChatClient init
+            # These should be passed in ChatAgent.run() execution_settings instead
         )
 
         self.redraft_agent = ChatAgent(
@@ -439,7 +438,7 @@ class TurnitinAgent:
                         metadata=metadata,
                     )
                 )
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning(
                     "Redraft LLM failed for section %s: %s. Applying heuristic fallback.",
                     section.section_id,

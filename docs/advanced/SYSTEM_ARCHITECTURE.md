@@ -1,7 +1,7 @@
 # System Architecture - Microsoft Agent Framework & AgentONE
 
-> **Last Updated**: January 15, 2025  
-> **Status**: Production  
+> **Last Updated**: January 15, 2025
+> **Status**: Production
 > **Audience**: Architects, Senior Engineers, Technical Leads
 
 ---
@@ -61,11 +61,11 @@ graph TB
         Workflows["Workflow Engine"]
         DevUI["Developer UI"]
     end
-    
+
     subgraph "AgentONE Application"
         Orchestrator["Agent Orchestrator"]
         ACE["ACE Context System"]
-        
+
         subgraph "7-Agent Pipeline"
             Intent["Intent Agent"]
             Planning["Planning Agent"]
@@ -75,14 +75,14 @@ graph TB
             Evaluation["Evaluation Agent"]
             Turnitin["Turnitin Agent"]
         end
-        
+
         DB["PostgreSQL + pgvector"]
         APIs["External APIs<br/>(OpenRouter, Tavily, etc)"]
     end
-    
+
     Core --> Orchestrator
     Workflows --> Orchestrator
-    
+
     Orchestrator --> Intent
     Intent --> Planning
     Planning --> Search
@@ -90,7 +90,7 @@ graph TB
     Verification --> Writing
     Writing --> Evaluation
     Evaluation --> Turnitin
-    
+
     ACE -.-> Intent
     ACE -.-> Planning
     ACE -.-> Search
@@ -98,11 +98,11 @@ graph TB
     ACE -.-> Writing
     ACE -.-> Evaluation
     ACE -.-> Turnitin
-    
+
     Orchestrator --> DB
     Search --> APIs
     Turnitin --> APIs
-    
+
     style Core fill:#4A90E2,stroke:#333,stroke-width:2px,color:#fff
     style Orchestrator fill:#E25C4A,stroke:#333,stroke-width:2px,color:#fff
     style ACE fill:#9B59B6,stroke:#333,stroke-width:2px,color:#fff
@@ -181,38 +181,38 @@ workflow = (
 ```python
 class ProwziOrchestrator:
     """Master controller for 7-agent research pipeline"""
-    
+
     async def run_research(self, prompt: str) -> ProwziOrchestrationResult:
         # Stage 1: Intent Analysis
         intent = await self.intent_agent.analyze(prompt)
         await self.emit_event("intent_completed", intent)
-        
+
         # Stage 2: Planning
         plan = await self.planning_agent.create_plan(intent)
         await self.emit_event("planning_completed", plan)
-        
+
         # Stage 3: Evidence Search
         search_results = await self.search_agent.search(plan.queries)
         await self.emit_event("search_completed", search_results)
-        
+
         # Stage 4: Verification (Quality Gate)
         verified = await self.verification_agent.verify(search_results)
         if not verified.quality_score > 0.7:
             # Retry or fail
             pass
-        
+
         # Stage 5: Writing
         draft = await self.writing_agent.write(verified.evidence)
         await self.emit_event("writing_completed", draft)
-        
+
         # Stage 6: Evaluation
         evaluation = await self.evaluation_agent.evaluate(draft)
         await self.emit_event("evaluation_completed", evaluation)
-        
+
         # Stage 7: Turnitin Check
         turnitin = await self.turnitin_agent.check(draft)
         await self.emit_event("turnitin_completed", turnitin)
-        
+
         return ProwziOrchestrationResult(...)
 ```
 
@@ -247,7 +247,7 @@ classDiagram
         +run(input) AgentRunResponse
         +run_stream(input) AsyncIterable
     }
-    
+
     class ChatAgent {
         +chat_client: ChatClientProtocol
         +instructions: str
@@ -255,7 +255,7 @@ classDiagram
         +run(input) AgentRunResponse
         +run_stream(input) AsyncIterable
     }
-    
+
     class Executor {
         <<abstract>>
         +id: str
@@ -263,27 +263,27 @@ classDiagram
         +output_types: list
         +can_handle(message) bool
     }
-    
+
     class WorkflowBuilder {
         +set_start_executor(executor)
         +add_edge(source, target)
         +with_checkpointing(storage)
         +build() Workflow
     }
-    
+
     class Workflow {
         +id: str
         +run(input) list~WorkflowEvent~
         +run_stream(input) AsyncIterable
         +as_agent(name) WorkflowAgent
     }
-    
+
     class WorkflowContext {
         +workflow_id: str
         +state: dict
         +send_message(message)
     }
-    
+
     AgentProtocol <|.. ChatAgent
     Executor <|-- AgentExecutor
     Executor <|-- FunctionExecutor
@@ -310,7 +310,7 @@ sequenceDiagram
     participant Executor1
     participant Executor2
     participant Context
-    
+
     User->>Workflow: run(input)
     Workflow->>Context: Initialize state
     Workflow->>Executor1: process(input, context)
@@ -364,37 +364,37 @@ events = await workflow.run_stream_from_checkpoint(checkpoint_id)
 ```mermaid
 graph LR
     User["User Input<br/>(Prompt + Docs)"]
-    
+
     subgraph "Stage 1: Understanding"
         Intent["Intent Agent<br/>GPT-5 Turbo<br/>$0.002/1K tokens"]
     end
-    
+
     subgraph "Stage 2: Strategy"
         Planning["Planning Agent<br/>Claude 4.5 Sonnet<br/>$0.003/1K tokens"]
     end
-    
+
     subgraph "Stage 3: Research"
         Search["Evidence Search<br/>Gemini 2.5 Flash<br/>Multi-API"]
     end
-    
+
     subgraph "Stage 4: Quality Gate"
         Verification["Verification Agent<br/>GPT-5 Turbo<br/>Fact-checking"]
     end
-    
+
     subgraph "Stage 5: Creation"
         Writing["Writing Agent<br/>Claude 4.5 Sonnet<br/>Draft generation"]
     end
-    
+
     subgraph "Stage 6: Assessment"
         Evaluation["Evaluation Agent<br/>GPT-5 Turbo<br/>Quality scoring"]
     end
-    
+
     subgraph "Stage 7: Compliance"
         Turnitin["Turnitin Agent<br/>Plagiarism check<br/>Originality"]
     end
-    
+
     Result["Final Result<br/>(Draft + Metadata)"]
-    
+
     User --> Intent
     Intent --> Planning
     Planning --> Search
@@ -405,7 +405,7 @@ graph LR
     Evaluation -->|Pass| Turnitin
     Evaluation -->|Fail| Writing
     Turnitin --> Result
-    
+
     style Intent fill:#FFE5B4
     style Planning fill:#B4D7FF
     style Search fill:#C4E1C4
@@ -428,12 +428,12 @@ class ContextManager:
     Maintains shared context across all agents in the pipeline
     Uses PostgreSQL + pgvector for semantic search
     """
-    
+
     def __init__(self, session: AsyncSession):
         self.session = session
         self.context_store: Dict[str, Any] = {}
         self.embeddings_cache: Dict[str, np.ndarray] = {}
-    
+
     async def add_context(self, key: str, value: Any, metadata: dict):
         """Add new context with semantic embeddings"""
         embedding = await self.generate_embedding(value)
@@ -445,7 +445,7 @@ class ContextManager:
                 metadata=metadata
             )
         )
-    
+
     async def get_context(self, query: str, top_k: int = 5):
         """Retrieve relevant context via semantic search"""
         query_embedding = await self.generate_embedding(query)
@@ -465,18 +465,18 @@ sequenceDiagram
     participant Planning
     participant Search
     participant DB
-    
+
     Intent->>ACE: add_context("user_requirements", intent_data)
     ACE->>DB: INSERT with embeddings
-    
+
     Planning->>ACE: get_context("requirements")
     ACE->>DB: Semantic search
     DB-->>ACE: Top 5 relevant contexts
     ACE-->>Planning: Relevant contexts
-    
+
     Planning->>ACE: add_context("search_queries", queries)
     ACE->>DB: INSERT
-    
+
     Search->>ACE: get_context("queries")
     ACE-->>Search: Query list
 ```
@@ -489,7 +489,7 @@ sequenceDiagram
 ```python
 class OrchestratorEventsMixin:
     """Mixin for real-time progress updates via WebSocket"""
-    
+
     async def emit_event(self, event_type: str, data: dict):
         """Emit event to all connected WebSocket clients"""
         event = {
@@ -498,12 +498,12 @@ class OrchestratorEventsMixin:
             "data": data,
             "session_id": self.session_id
         }
-        
+
         await self.websocket_manager.broadcast(
             json.dumps(event),
             session_id=self.session_id
         )
-        
+
         # Also log to database for audit trail
         await self.db_session.execute(
             insert(EventLog).values(**event)
@@ -588,10 +588,10 @@ parent_workflow = (
 async def run_with_quality_gates(self):
     # Stage 3: Search
     search_result = await self.search_agent.execute()
-    
+
     # Quality Gate: Verification
     verification = await self.verification_agent.verify(search_result)
-    
+
     if verification.quality_score < 0.7:
         # Retry search with refined queries
         self.logger.warning("Search quality below threshold, retrying...")
@@ -599,10 +599,10 @@ async def run_with_quality_gates(self):
             refined_queries=verification.suggestions
         )
         verification = await self.verification_agent.verify(search_result)
-    
+
     if verification.quality_score < 0.6:
         raise QualityGateError("Unable to meet quality standards")
-    
+
     # Proceed to next stage
     return search_result
 ```
@@ -612,7 +612,7 @@ async def run_with_quality_gates(self):
 class BaseAgent:
     max_retries = 3
     retry_backoff = 1.5  # seconds
-    
+
     async def execute_with_retry(self, *args, **kwargs):
         for attempt in range(self.max_retries):
             try:
@@ -622,7 +622,7 @@ class BaseAgent:
                 if attempt == self.max_retries - 1:
                     await self.emit_event("agent_failed", {"error": str(e)})
                     raise
-                
+
                 wait_time = self.retry_backoff ** attempt
                 self.logger.warning(f"Attempt {attempt + 1} failed, retrying in {wait_time}s")
                 await asyncio.sleep(wait_time)
@@ -635,7 +635,7 @@ class BaseAgent:
         """Track token usage and cost for each agent call"""
         tokens_used = response.usage.total_tokens
         cost = self.calculate_cost(tokens_used)
-        
+
         await self.db_session.execute(
             update(ResearchSession)
             .where(ResearchSession.id == self.session_id)
@@ -644,7 +644,7 @@ class BaseAgent:
                 total_cost=ResearchSession.total_cost + cost
             )
         )
-        
+
         await self.emit_event("cost_update", {
             "agent": self.name,
             "tokens": tokens_used,
@@ -666,13 +666,13 @@ graph TB
         PY["Python 3.13<br/>+ Framework"]
         DB["PostgreSQL<br/>(Docker)"]
     end
-    
+
     subgraph "External Services"
         OpenRouter["OpenRouter API"]
         Azure["Azure OpenAI"]
         Search["Search APIs"]
     end
-    
+
     VS --> PY
     PY --> DB
     PY --> OpenRouter
@@ -686,51 +686,51 @@ graph TB
 graph TB
     subgraph "Azure Cloud"
         LB["Load Balancer<br/>Azure Front Door"]
-        
+
         subgraph "App Service"
             Web1["FastAPI Instance 1"]
             Web2["FastAPI Instance 2"]
             Web3["FastAPI Instance N"]
         end
-        
+
         subgraph "Data Tier"
             PGDB["Azure PostgreSQL<br/>Flexible Server"]
             Redis["Azure Redis<br/>Premium"]
             Storage["Azure Blob Storage<br/>Checkpoints"]
         end
-        
+
         subgraph "Monitoring"
             AppInsights["Application Insights"]
             LogAnalytics["Log Analytics"]
         end
     end
-    
+
     subgraph "External APIs"
         OpenRouter["OpenRouter"]
         AzureAI["Azure OpenAI"]
         Search["Search Services"]
     end
-    
+
     LB --> Web1
     LB --> Web2
     LB --> Web3
-    
+
     Web1 --> PGDB
     Web2 --> PGDB
     Web3 --> PGDB
-    
+
     Web1 --> Redis
     Web2 --> Redis
     Web3 --> Redis
-    
+
     Web1 --> Storage
     Web2 --> Storage
     Web3 --> Storage
-    
+
     Web1 --> AppInsights
     Web2 --> AppInsights
     Web3 --> AppInsights
-    
+
     Web1 --> OpenRouter
     Web1 --> AzureAI
     Web1 --> Search
@@ -846,7 +846,7 @@ auto_scale:
 
 ---
 
-**Questions? Issues?**  
-- 📧 Email: support@agentone.dev  
-- 🐛 GitHub Issues: [https://github.com/Abelhubprog/AgentONE/issues](https://github.com/Abelhubprog/AgentONE/issues)  
+**Questions? Issues?**
+- 📧 Email: support@agentone.dev
+- 🐛 GitHub Issues: [https://github.com/Abelhubprog/AgentONE/issues](https://github.com/Abelhubprog/AgentONE/issues)
 - 💬 Discord: [Microsoft Azure AI Foundry](https://discord.gg/b5zjErwbQM)

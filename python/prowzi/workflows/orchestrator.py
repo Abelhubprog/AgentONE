@@ -6,17 +6,17 @@ import asyncio
 import logging
 import time
 import uuid
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 
+from prowzi.agents.evaluation_agent import EvaluationAgent, EvaluationAgentResult
 from prowzi.agents.intent_agent import IntentAgent, IntentAnalysis
 from prowzi.agents.planning_agent import PlanningAgent, ResearchPlan
 from prowzi.agents.search_agent import SearchAgent, SearchAgentResult
+from prowzi.agents.turnitin_agent import TurnitinAgent, TurnitinAgentResult, TurnitinThresholds
 from prowzi.agents.verification_agent import VerificationAgent, VerificationAgentResult
 from prowzi.agents.writing_agent import WritingAgent, WritingAgentResult
-from prowzi.agents.evaluation_agent import EvaluationAgent, EvaluationAgentResult
-from prowzi.agents.turnitin_agent import TurnitinAgent, TurnitinAgentResult, TurnitinThresholds
 from prowzi.config import ProwziConfig, get_config
 from prowzi.workflows.checkpoint import CheckpointManager, WorkflowCheckpoint
 from prowzi.workflows.telemetry import TelemetryCollector
@@ -146,7 +146,6 @@ class ProwziOrchestrator:
         checkpoint_id: Optional[str] = None,
     ) -> ProwziOrchestrationResult:
         """Execute the complete pipeline with retries, metrics, checkpoints, and telemetry."""
-
         # Generate session ID
         session_id = checkpoint_id or str(uuid.uuid4())
 
@@ -274,7 +273,7 @@ class ProwziOrchestrator:
                         self._save_checkpoint(session_id, spec.name, context)
 
                     break
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     stats.error = repr(exc)
                     logger.exception("Stage %s failed on attempt %s", spec.name, attempt)
 
@@ -522,7 +521,7 @@ class ProwziOrchestrator:
             return
         try:
             await callback(stage, payload)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("Progress callback for stage '%s' failed: %s", stage, exc)
 
     def _save_checkpoint(self, session_id: str, stage_name: str, context: _StageContext) -> None:
@@ -557,7 +556,7 @@ class ProwziOrchestrator:
                 stage_metrics=context.stage_metrics,
             )
             logger.info("Checkpoint saved for session %s at stage %s", session_id, stage_name)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("Failed to save checkpoint: %s", exc)
 
     def _restore_context_from_checkpoint(

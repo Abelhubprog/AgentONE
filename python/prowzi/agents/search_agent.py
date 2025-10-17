@@ -143,9 +143,9 @@ class SearchAgent:
         self.chat_client = OpenAIChatClient(
             api_key=self.config.openrouter_api_key,
             base_url=self.config.openrouter_base_url,
-            model=self.model_config.name,
-            temperature=self.agent_config.temperature,
-            max_tokens=self.agent_config.max_tokens,
+            model_id=self.model_config.name,
+            # NOTE: temperature and max_tokens not supported by OpenAIChatClient init
+            # These should be passed in ChatAgent.run() execution_settings instead
         )
 
         self.scoring_agent = ChatAgent(
@@ -514,8 +514,7 @@ class SearchAgent:
             if not api_config.api_key:
                 logger.warning("Perplexity API key missing; skipping engine.")
                 return None
-            return PerplexitySearch(api_key=api_config.api_key, timeout=timeout)
+                return PerplexitySearch(api_key=api_config.api_key, timeout=timeout)
         # TODO: Add Exa, Tavily, Serper, You.com integrations
         logger.debug("Search engine '%s' not yet implemented; skipping.", name)
         return None
-```}

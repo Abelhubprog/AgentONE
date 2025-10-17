@@ -1,7 +1,7 @@
 # Workflow Patterns & Recipes
 
-> **Last Updated**: January 15, 2025  
-> **Difficulty**: Intermediate to Advanced  
+> **Last Updated**: January 15, 2025
+> **Difficulty**: Intermediate to Advanced
 > **Prerequisites**: Understanding of Microsoft Agent Framework basics
 
 ---
@@ -170,11 +170,11 @@ graph TB
     Input["Input Text"] --> French["French Agent"]
     Input --> Spanish["Spanish Agent"]
     Input --> German["German Agent"]
-    
+
     French --> Aggregator["Default Aggregator"]
     Spanish --> Aggregator
     German --> Aggregator
-    
+
     Aggregator --> Output["Combined Results"]
 ```
 
@@ -187,16 +187,16 @@ async def intelligent_aggregator(results: List[AgentRunResponse]) -> str:
     """Use an LLM to synthesize results"""
     # Extract text from all results
     translations = [r.messages[0].text for r in results]
-    
+
     # Create synthesis agent
     synthesizer = ChatAgent(
         chat_client=OpenAIChatClient(),
         instructions="Compare these translations and explain differences."
     )
-    
-    comparison_text = "\n\n".join(f"**Translation {i+1}**:\n{t}" 
+
+    comparison_text = "\n\n".join(f"**Translation {i+1}**:\n{t}"
                                    for i, t in enumerate(translations))
-    
+
     synthesis = await synthesizer.run(comparison_text)
     return synthesis.messages[0].text
 
@@ -304,17 +304,17 @@ async for event in result:
 ```mermaid
 graph TB
     Start["User Task"] --> Manager["Magentic Manager"]
-    
+
     Manager -->|Decides| Researcher
     Manager -->|Decides| Analyst
     Manager -->|Decides| Writer
     Manager -->|Decides| Editor
-    
+
     Researcher --> Manager
     Analyst --> Manager
     Writer --> Manager
     Editor --> Manager
-    
+
     Manager -->|Task Complete| End["Final Result"]
 ```
 
@@ -345,7 +345,7 @@ async for event in workflow.run_stream("Task description"):
     if event.type == "request_info":
         # Pause for human input
         user_approval = input("Approve plan? (yes/no/changes): ")
-        
+
         if user_approval.lower() == "yes":
             await workflow.send_response(RequestResponse(
                 response_id=event.request_id,
@@ -374,12 +374,12 @@ def create_text_processing_workflow():
     cleaner = executor(async def clean_text(text: str, ctx) -> str:
         return text.strip().lower()
     )
-    
+
     analyzer = ChatAgent(
         name="Text Analyzer",
         instructions="Analyze text quality and structure"
     )
-    
+
     return (
         WorkflowBuilder()
         .set_start_executor(cleaner)
@@ -459,15 +459,15 @@ async for event in workflow.run_stream(input_data):
         # Pause for user input
         print(f"System asks: {event.request_text}")
         print(f"Current draft: {event.data}")
-        
+
         user_response = input("Your response: ")
-        
+
         # Send response back to workflow
         await workflow.send_response(RequestResponse(
             response_id=event.request_id,
             data={"response": user_response}
         ))
-    
+
     elif event.type == "agent_run_update":
         print(f"Progress: {event.data}")
 ```
@@ -605,30 +605,30 @@ from typing import Optional
 
 @executor
 async def resilient_executor(
-    input_data: str, 
+    input_data: str,
     ctx: WorkflowContext,
     max_retries: int = 3,
     backoff_factor: float = 2.0
 ) -> str:
     """Execute with automatic retries"""
     last_error: Optional[Exception] = None
-    
+
     for attempt in range(max_retries):
         try:
             # Attempt operation
             result = await risky_operation(input_data)
             return result
-        
+
         except Exception as e:
             last_error = e
-            
+
             if attempt < max_retries - 1:
                 wait_time = backoff_factor ** attempt
                 print(f"Attempt {attempt + 1} failed, retrying in {wait_time}s...")
                 await asyncio.sleep(wait_time)
             else:
                 print(f"All {max_retries} attempts failed")
-    
+
     # All retries exhausted
     raise last_error
 ```
@@ -645,10 +645,10 @@ async def fallback_executor(input_data: str, ctx: WorkflowContext) -> str:
         # Try expensive, high-quality model
         result = await primary_agent.run(input_data)
         return result.messages[0].text
-    
+
     except Exception as e:
         print(f"Primary agent failed: {e}, trying fallback...")
-        
+
         # Fallback to cheaper, reliable model
         result = await fallback_agent.run(input_data)
         return result.messages[0].text
@@ -676,23 +676,23 @@ class CircuitBreaker:
     failures: int = 0
     last_failure_time: Optional[datetime] = None
     state: str = "CLOSED"  # CLOSED, OPEN, HALF_OPEN
-    
+
     def record_failure(self):
         self.failures += 1
         self.last_failure_time = datetime.utcnow()
-        
+
         if self.failures >= self.failure_threshold:
             self.state = "OPEN"
             print(f"Circuit breaker OPEN after {self.failures} failures")
-    
+
     def record_success(self):
         self.failures = 0
         self.state = "CLOSED"
-    
+
     def should_attempt(self) -> bool:
         if self.state == "CLOSED":
             return True
-        
+
         if self.state == "OPEN":
             # Check if timeout expired
             if self.last_failure_time:
@@ -702,7 +702,7 @@ class CircuitBreaker:
                     print("Circuit breaker HALF_OPEN, attempting recovery")
                     return True
             return False
-        
+
         # HALF_OPEN: try once
         return True
 
@@ -713,7 +713,7 @@ circuit_breaker = CircuitBreaker()
 async def protected_executor(input_data: str, ctx: WorkflowContext) -> str:
     if not circuit_breaker.should_attempt():
         raise Exception("Circuit breaker is OPEN")
-    
+
     try:
         result = await external_service_call(input_data)
         circuit_breaker.record_success()
@@ -743,13 +743,13 @@ class QualityGate:
 
 class QualityGatedPipeline:
     """Sequential pipeline with quality checks between stages"""
-    
+
     def __init__(self):
         self.quality_gates = {
             "verification": QualityGate(min_score=0.7, max_retries=2, agent_name="Verification"),
             "evaluation": QualityGate(min_score=0.75, max_retries=1, agent_name="Evaluation"),
         }
-    
+
     async def run_stage_with_quality_gate(
         self,
         agent,
@@ -758,17 +758,17 @@ class QualityGatedPipeline:
     ):
         """Execute stage with optional quality gate"""
         result = await agent.execute(input_data)
-        
+
         if gate_name and gate_name in self.quality_gates:
             gate = self.quality_gates[gate_name]
-            
+
             for retry in range(gate.max_retries):
                 quality_score = result.get("quality_score", 1.0)
-                
+
                 if quality_score >= gate.min_score:
                     print(f"✅ {gate.agent_name} quality gate passed ({quality_score:.2f})")
                     break
-                
+
                 if retry < gate.max_retries - 1:
                     print(f"⚠️ {gate.agent_name} quality below threshold ({quality_score:.2f}), retrying...")
                     result = await agent.execute(input_data, retry=retry+1)
@@ -776,9 +776,9 @@ class QualityGatedPipeline:
                     raise QualityGateError(
                         f"{gate.agent_name} failed quality gate after {gate.max_retries} attempts"
                     )
-        
+
         return result
-    
+
     async def run_research_pipeline(self, prompt: str):
         """Execute full 7-stage AgentONE pipeline"""
         # Stage 1: Intent Analysis
@@ -786,45 +786,45 @@ class QualityGatedPipeline:
             self.intent_agent,
             {"prompt": prompt}
         )
-        
+
         # Stage 2: Planning
         plan = await self.run_stage_with_quality_gate(
             self.planning_agent,
             {"intent": intent}
         )
-        
+
         # Stage 3: Search
         search_results = await self.run_stage_with_quality_gate(
             self.search_agent,
             {"plan": plan}
         )
-        
+
         # Stage 4: Verification (WITH QUALITY GATE)
         verified_results = await self.run_stage_with_quality_gate(
             self.verification_agent,
             {"results": search_results},
             gate_name="verification"
         )
-        
+
         # Stage 5: Writing
         draft = await self.run_stage_with_quality_gate(
             self.writing_agent,
             {"evidence": verified_results}
         )
-        
+
         # Stage 6: Evaluation (WITH QUALITY GATE)
         evaluation = await self.run_stage_with_quality_gate(
             self.evaluation_agent,
             {"draft": draft},
             gate_name="evaluation"
         )
-        
+
         # Stage 7: Turnitin
         turnitin_result = await self.run_stage_with_quality_gate(
             self.turnitin_agent,
             {"draft": draft}
         )
-        
+
         return {
             "intent": intent,
             "plan": plan,
@@ -851,14 +851,14 @@ async for event in workflow.run_stream(input_data):
         # Stream intermediate results
         print(f"Agent: {event.agent_name}")
         print(f"Progress: {event.data.get('text', '')}")
-        
+
         # Send to frontend via WebSocket
         await websocket.send_json({
             "type": "progress",
             "agent": event.agent_name,
             "content": event.data.get('text')
         })
-    
+
     elif event.type == "agent_run_complete":
         print(f"✅ {event.agent_name} completed")
 ```
@@ -874,35 +874,35 @@ import json
 
 class CachedAgent:
     """Agent wrapper with result caching"""
-    
+
     def __init__(self, agent: ChatAgent, cache_ttl: int = 3600):
         self.agent = agent
         self.cache = {}
         self.cache_ttl = cache_ttl
-    
+
     def _cache_key(self, input_data: str) -> str:
         """Generate cache key from input"""
         return hashlib.sha256(input_data.encode()).hexdigest()
-    
+
     async def run(self, input_data: str):
         cache_key = self._cache_key(input_data)
-        
+
         # Check cache
         if cache_key in self.cache:
             cached_result, timestamp = self.cache[cache_key]
             age = time.time() - timestamp
-            
+
             if age < self.cache_ttl:
                 print(f"Cache hit (age: {age:.1f}s)")
                 return cached_result
-        
+
         # Cache miss - run agent
         print("Cache miss, running agent...")
         result = await self.agent.run(input_data)
-        
+
         # Store in cache
         self.cache[cache_key] = (result, time.time())
-        
+
         return result
 
 # Usage
@@ -921,15 +921,15 @@ async def batch_processor(items: List[str], ctx: WorkflowContext) -> List[str]:
     """Process items in parallel batches"""
     batch_size = 10
     results = []
-    
+
     for i in range(0, len(items), batch_size):
         batch = items[i:i+batch_size]
-        
+
         # Process batch concurrently
         batch_tasks = [process_item(item) for item in batch]
         batch_results = await asyncio.gather(*batch_tasks)
         results.extend(batch_results)
-        
+
         # Progress update
         progress = (i + len(batch)) / len(items) * 100
         await ctx.send_message({
@@ -938,7 +938,7 @@ async def batch_processor(items: List[str], ctx: WorkflowContext) -> List[str]:
             "processed": i + len(batch),
             "total": len(items)
         })
-    
+
     return results
 ```
 
@@ -978,7 +978,7 @@ async def batch_processor(items: List[str], ctx: WorkflowContext) -> List[str]:
 
 ---
 
-**Questions?**  
-- 📖 Docs: [https://learn.microsoft.com/agent-framework/](https://learn.microsoft.com/agent-framework/)  
-- 🐛 Issues: [https://github.com/Abelhubprog/AgentONE/issues](https://github.com/Abelhubprog/AgentONE/issues)  
+**Questions?**
+- 📖 Docs: [https://learn.microsoft.com/agent-framework/](https://learn.microsoft.com/agent-framework/)
+- 🐛 Issues: [https://github.com/Abelhubprog/AgentONE/issues](https://github.com/Abelhubprog/AgentONE/issues)
 - 💬 Discord: [Microsoft Azure AI Foundry](https://discord.gg/b5zjErwbQM)

@@ -1,5 +1,4 @@
-"""
-Planning Agent
+"""Planning Agent
 
 Strategic task decomposition and search query generation.
 Uses GPT-4o for structured planning with hierarchical task breakdown.
@@ -14,15 +13,17 @@ Responsibilities:
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional, Tuple
 from enum import Enum
-import json
+from typing import Any, Dict, List, Optional
 
 from agent_framework import ChatAgent
 from agent_framework.openai import OpenAIChatClient
 
-from prowzi.config import get_config
 from prowzi.agents.intent_agent import IntentAnalysis
+from prowzi.config import get_config
+from prowzi.config.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class QueryType(Enum):
@@ -45,8 +46,7 @@ class TaskPriority(Enum):
 
 @dataclass
 class SearchQuery:
-    """
-    A single search query.
+    """A single search query.
 
     Attributes:
         query: The search query string
@@ -76,8 +76,7 @@ class SearchQuery:
 
 @dataclass
 class Task:
-    """
-    A single task in the workflow.
+    """A single task in the workflow.
 
     Attributes:
         id: Unique task identifier
@@ -96,7 +95,7 @@ class Task:
     description: str
     priority: TaskPriority
     depends_on: List[str] = field(default_factory=list)
-    subtasks: List['Task'] = field(default_factory=list)
+    subtasks: List["Task"] = field(default_factory=list)
     duration_minutes: int = 10
     assigned_agent: Optional[str] = None
     queries: List[SearchQuery] = field(default_factory=list)
@@ -119,8 +118,7 @@ class Task:
 
 @dataclass
 class QualityCheckpoint:
-    """
-    Quality checkpoint in the workflow.
+    """Quality checkpoint in the workflow.
 
     Attributes:
         name: Checkpoint name
@@ -144,8 +142,7 @@ class QualityCheckpoint:
 
 @dataclass
 class ResearchPlan:
-    """
-    Complete research plan output.
+    """Complete research plan output.
 
     Attributes:
         task_hierarchy: Root task with all subtasks
@@ -180,8 +177,7 @@ class ResearchPlan:
 
 
 class PlanningAgent:
-    """
-    Planning Agent implementation.
+    """Planning Agent implementation.
 
     Decomposes research requirements into actionable tasks with search queries.
 
@@ -193,8 +189,7 @@ class PlanningAgent:
     """
 
     def __init__(self, config=None):
-        """
-        Initialize Planning Agent.
+        """Initialize Planning Agent.
 
         Args:
             config: Optional ProwziConfig instance
@@ -208,7 +203,7 @@ class PlanningAgent:
         self.chat_client = OpenAIChatClient(
             api_key=self.config.openrouter_api_key,
             base_url=self.config.openrouter_base_url,
-            model=model_config.name,
+            model_id=model_config.name,
         )
 
         # Create planning agent
@@ -267,8 +262,7 @@ Be thorough, realistic, and strategic in your planning."""
         intent_analysis: IntentAnalysis,
         custom_constraints: Optional[Dict[str, Any]] = None
     ) -> ResearchPlan:
-        """
-        Create comprehensive research plan.
+        """Create comprehensive research plan.
 
         Args:
             intent_analysis: Output from IntentAgent
@@ -277,7 +271,7 @@ Be thorough, realistic, and strategic in your planning."""
         Returns:
             ResearchPlan with complete task decomposition and queries
         """
-        print("📋 Planning Agent: Creating research plan...")
+        logger.info("📋 Planning Agent: Creating research plan...")
 
         # Build planning prompt
         prompt = self._build_planning_prompt(intent_analysis, custom_constraints)
@@ -288,12 +282,12 @@ Be thorough, realistic, and strategic in your planning."""
         # Parse response into ResearchPlan
         plan = self._parse_plan_response(response.response, intent_analysis)
 
-        print("✅ Research plan created!")
-        print(f"   Total tasks: {len(plan.execution_order)}")
-        print(f"   Search queries: {len(plan.search_queries)}")
-        print(f"   Parallel groups: {len(plan.parallel_groups)}")
-        print(f"   Estimated duration: {plan.resource_estimates.get('total_duration_minutes', 0)} minutes")
-        print(f"   Estimated cost: ${plan.resource_estimates.get('total_cost_usd', 0):.2f}")
+        logger.info("✅ Research plan created!")
+        logger.info(f"   Total tasks: {len(plan.execution_order)}")
+        logger.info(f"   Search queries: {len(plan.search_queries)}")
+        logger.info(f"   Parallel groups: {len(plan.parallel_groups)}")
+        logger.info(f"   Estimated duration: {plan.resource_estimates.get('total_duration_minutes', 0)} minutes")
+        logger.info(f"   Estimated cost: ${plan.resource_estimates.get('total_cost_usd', 0):.2f}")
 
         return plan
 
@@ -357,8 +351,7 @@ Be thorough, realistic, and strategic in your planning."""
         response: str,
         intent_analysis: IntentAnalysis
     ) -> ResearchPlan:
-        """
-        Parse agent response into ResearchPlan structure.
+        """Parse agent response into ResearchPlan structure.
 
         This is a simplified implementation. In production, you'd use
         structured output or JSON schema validation.

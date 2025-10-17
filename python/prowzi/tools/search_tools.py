@@ -1,5 +1,4 @@
-"""
-Search Tools
+"""Search Tools
 
 Integrates 8 different search APIs for comprehensive evidence gathering:
     - Academic: Semantic Scholar, PubMed, arXiv
@@ -8,11 +7,15 @@ Integrates 8 different search APIs for comprehensive evidence gathering:
 Handles deduplication, relevance scoring, and error recovery.
 """
 
-from dataclasses import dataclass
-from typing import Dict, Any, List, Optional, Set
-from enum import Enum
 import asyncio
 import hashlib
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Dict, List, Optional, Set
+
+from prowzi.config.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class SourceType(Enum):
@@ -29,8 +32,7 @@ class SourceType(Enum):
 
 @dataclass
 class SearchResult:
-    """
-    Standardized search result across all APIs.
+    """Standardized search result across all APIs.
 
     Attributes:
         title: Title of the source
@@ -91,8 +93,7 @@ class SearchEngine:
         max_results: int = 10,
         **kwargs
     ) -> List[SearchResult]:
-        """
-        Execute search query.
+        """Execute search query.
 
         Args:
             query: Search query string
@@ -137,7 +138,7 @@ class SemanticScholarSearch(SearchEngine):
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, params=params, headers=headers, timeout=self.timeout) as response:
                     if response.status != 200:
-                        print(f"Semantic Scholar API error: {response.status}")
+                        logger.error(f"Semantic Scholar API error: {response.status}")
                         return []
 
                     data = await response.json()
@@ -162,7 +163,7 @@ class SemanticScholarSearch(SearchEngine):
                     return results
 
         except Exception as e:
-            print(f"Semantic Scholar search error: {e}")
+            logger.error(f"Semantic Scholar search error: {e}", exc_info=True)
             return []
 
 
@@ -177,8 +178,16 @@ class ArXivSearch(SearchEngine):
     ) -> List[SearchResult]:
         """Search arXiv"""
         try:
+            # SECURITY: Use defusedxml to prevent XML injection attacks
+            try:
+                from defusedxml import ElementTree as ET
+            except ImportError:
+                # Fallback to standard library with warning
+                import xml.etree.ElementTree as ET
+                import warnings
+                warnings.warn("defusedxml not installed - using standard xml (less secure)", stacklevel=2)
+
             import aiohttp
-            import xml.etree.ElementTree as ET
 
             url = "http://export.arxiv.org/api/query"
             params = {
@@ -191,7 +200,7 @@ class ArXivSearch(SearchEngine):
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, params=params, timeout=self.timeout) as response:
                     if response.status != 200:
-                        print(f"arXiv API error: {response.status}")
+                        logger.error(f"arXiv API error: {response.status}")
                         return []
 
                     xml_data = await response.text()
@@ -228,7 +237,7 @@ class ArXivSearch(SearchEngine):
                     return results
 
         except Exception as e:
-            print(f"arXiv search error: {e}")
+            logger.error(f"arXiv search error: {e}", exc_info=True)
             return []
 
 
@@ -243,8 +252,16 @@ class PubMedSearch(SearchEngine):
     ) -> List[SearchResult]:
         """Search PubMed"""
         try:
+            # SECURITY: Use defusedxml to prevent XML injection attacks
+            try:
+                from defusedxml import ElementTree as ET
+            except ImportError:
+                # Fallback to standard library with warning
+                import xml.etree.ElementTree as ET
+                import warnings
+                warnings.warn("defusedxml not installed - using standard xml (less secure)", stacklevel=2)
+
             import aiohttp
-            import xml.etree.ElementTree as ET
 
             # Step 1: Search to get PMIDs
             search_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
@@ -258,7 +275,7 @@ class PubMedSearch(SearchEngine):
             async with aiohttp.ClientSession() as session:
                 async with session.get(search_url, params=search_params, timeout=self.timeout) as response:
                     if response.status != 200:
-                        print(f"PubMed search error: {response.status}")
+                        logger.error(f"PubMed search error: {response.status}")
                         return []
 
                     search_data = await response.json()
@@ -277,7 +294,7 @@ class PubMedSearch(SearchEngine):
 
                     async with session.get(fetch_url, params=fetch_params, timeout=self.timeout) as response:
                         if response.status != 200:
-                            print(f"PubMed fetch error: {response.status}")
+                            logger.error(f"PubMed fetch error: {response.status}")
                             return []
 
                         xml_data = await response.text()
@@ -330,13 +347,13 @@ class PubMedSearch(SearchEngine):
                                 results.append(result)
 
                             except Exception as e:
-                                print(f"Error parsing PubMed article: {e}")
+                                logger.warning(f"Error parsing PubMed article: {e}")
                                 continue
 
                         return results
 
         except Exception as e:
-            print(f"PubMed search error: {e}")
+            logger.error(f"PubMed search error: {e}", exc_info=True)
             return []
 
 
@@ -369,7 +386,7 @@ class PerplexitySearch(SearchEngine):
             async with aiohttp.ClientSession() as session:
                 async with session.post(url, headers=headers, json=data, timeout=self.timeout) as response:
                     if response.status != 200:
-                        print(f"Perplexity API error: {response.status}")
+                        logger.error(f"Perplexity API error: {response.status}")
                         return []
 
                     result_data = await response.json()
@@ -388,7 +405,7 @@ class PerplexitySearch(SearchEngine):
                     return results
 
         except Exception as e:
-            print(f"Perplexity search error: {e}")
+            logger.error(f"Perplexity search error: {e}", exc_info=True)
             return []
 
 
@@ -398,8 +415,7 @@ async def multi_engine_search(
     max_results_per_engine: int = 10,
     deduplicate: bool = True
 ) -> List[SearchResult]:
-    """
-    Search across multiple engines in parallel.
+    """Search across multiple engines in parallel.
 
     Args:
         query: Search query
@@ -424,7 +440,7 @@ async def multi_engine_search(
         if isinstance(results, list):
             all_results.extend(results)
         elif isinstance(results, Exception):
-            print(f"Search engine error: {results}")
+            logger.error(f"Search engine error: {results}", exc_info=results)
 
     # Deduplicate by URL and title similarity
     if deduplicate:
@@ -434,8 +450,7 @@ async def multi_engine_search(
 
 
 def deduplicate_results(results: List[SearchResult]) -> List[SearchResult]:
-    """
-    Remove duplicate search results based on URL and title similarity.
+    """Remove duplicate search results based on URL and title similarity.
 
     Args:
         results: List of search results
@@ -471,8 +486,7 @@ def batch_search_queries(
     engines: List[SearchEngine],
     max_results_per_query: int = 10
 ) -> Dict[str, List[SearchResult]]:
-    """
-    Execute multiple search queries in parallel.
+    """Execute multiple search queries in parallel.
 
     Args:
         queries: List of search queries
@@ -488,6 +502,6 @@ def batch_search_queries(
             for query in queries
         ]
         results_lists = await asyncio.gather(*tasks)
-        return dict(zip(queries, results_lists))
+        return dict(zip(queries, results_lists, strict=False))
 
     return asyncio.run(_batch_search())

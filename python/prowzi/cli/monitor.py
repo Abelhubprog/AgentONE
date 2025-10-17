@@ -12,11 +12,10 @@ from typing import Any, Dict, Optional
 from rich.console import Console
 from rich.live import Live
 from rich.panel import Panel
-from rich.progress import BarColumn, Progress, SpinnerColumn, TaskID, TextColumn, TimeElapsedColumn
 from rich.table import Table
 from rich.text import Text
 
-from prowzi.workflows.telemetry import TelemetryCollector, WorkflowMetrics
+from prowzi.workflows.telemetry import TelemetryCollector
 
 logger = logging.getLogger(__name__)
 

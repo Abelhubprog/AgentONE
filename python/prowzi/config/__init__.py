@@ -1,21 +1,21 @@
 """Prowzi configuration package"""
 
 from prowzi.config.settings import (
-    ProwziConfig,
-    ModelConfig,
     AgentConfig,
-    SearchAPIConfig,
+    ModelConfig,
     ModelTier,
+    ProwziConfig,
+    SearchAPIConfig,
     get_config,
     set_config,
 )
 
 __all__ = [
-    "ProwziConfig",
-    "ModelConfig",
     "AgentConfig",
-    "SearchAPIConfig",
+    "ModelConfig",
     "ModelTier",
+    "ProwziConfig",
+    "SearchAPIConfig",
     "get_config",
     "set_config",
 ]

@@ -1,15 +1,15 @@
-"""
-Prowzi Configuration System
+"""Prowzi Configuration System
 
 Manages OpenRouter models, API keys, cost tracking, and agent-specific settings.
 Supports multiple model strategies with automatic fallbacks.
 """
 
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Dict, List, Optional, Any
 import os
+from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+import warnings
 
 
 class ModelTier(Enum):
@@ -59,16 +59,14 @@ class SearchAPIConfig:
 
 
 class ProwziConfig:
-    """
-    Central configuration for Prowzi system.
+    """Central configuration for Prowzi system.
 
     Loads from environment variables and provides sensible defaults.
     Supports cost tracking and multi-model strategies.
     """
 
     def __init__(self, env_file: Optional[Path] = None):
-        """
-        Initialize Prowzi configuration.
+        """Initialize Prowzi configuration.
 
         Args:
             env_file: Optional path to .env file. Defaults to python/.env
@@ -113,7 +111,7 @@ class ProwziConfig:
             from dotenv import load_dotenv
             load_dotenv(env_file)
         except ImportError:
-            print("Warning: python-dotenv not installed. Install with: pip install python-dotenv")
+            warnings.warn("python-dotenv not installed. Install with: pip install python-dotenv", UserWarning)
 
     def _initialize_models(self) -> Dict[str, ModelConfig]:
         """Initialize model configurations"""
@@ -320,8 +318,7 @@ class ProwziConfig:
         output_tokens: int,
         model_name: str
     ) -> float:
-        """
-        Estimate cost for a model call.
+        """Estimate cost for a model call.
 
         Args:
             input_tokens: Number of input tokens

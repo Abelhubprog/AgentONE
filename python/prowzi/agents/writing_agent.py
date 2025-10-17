@@ -179,9 +179,9 @@ class WritingAgent:
         self.chat_client = OpenAIChatClient(
             api_key=self.config.openrouter_api_key,
             base_url=self.config.openrouter_base_url,
-            model=self.model_config.name,
-            temperature=self.agent_config.temperature,
-            max_tokens=self.agent_config.max_tokens,
+            model_id=self.model_config.name,
+            # NOTE: temperature and max_tokens not supported by OpenAIChatClient init
+            # These should be passed in ChatAgent.run() execution_settings instead
         )
 
         self.outline_agent = ChatAgent(
@@ -382,7 +382,7 @@ class WritingAgent:
             {plan_summary}
 
             Verified Sources (top {min(len(source_lines), 20)} of {len(sources)}):
-{textwrap.indent('\n\n'.join(source_lines) or 'None', '  ')}
+            """ + textwrap.indent('\n\n'.join(source_lines) or 'None', '  ') + """
 
             Guidance:
               - Max Sections: {max_sections}
@@ -444,7 +444,7 @@ class WritingAgent:
               Required Style: {', '.join(intent.explicit_requirements[:3]) or 'Academic formal'}
 
             Approved Sources:
-{ textwrap.indent('\n\n'.join(source_details) or 'None provided. Use caution.', '  ') }
+            """ + textwrap.indent('\n\n'.join(source_details) or 'None provided. Use caution.', '  ') + """
 
             Instructions:
               - Integrate sources faithfully with inline markers.
@@ -474,13 +474,15 @@ class WritingAgent:
                 ).strip()
             )
 
+        sections_text = textwrap.indent('\n\n'.join(section_summaries) or 'No sections generated.', '  ')
+        guidelines_text = textwrap.indent('\n'.join(style_guidelines) or 'No specific style directives.', '  ')
         context = textwrap.dedent(
             f"""
             Draft Overview:
-{ textwrap.indent('\n\n'.join(section_summaries) or 'No sections generated.', '  ') }
+            {sections_text}
 
             Style Guidelines:
-{ textwrap.indent('\n'.join(style_guidelines) or 'No specific style directives.', '  ') }
+            {guidelines_text}
             """
         ).strip()
         return context
@@ -646,4 +648,3 @@ class WritingAgent:
         if match:
             return match.group(0)
         return None
-*** End Patch

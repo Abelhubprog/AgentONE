@@ -1,5 +1,4 @@
-"""
-Prowzi: Production-Ready Autonomous Multi-Agent Research System
+"""Prowzi: Production-Ready Autonomous Multi-Agent Research System
 
 Built on Microsoft Agent Framework with OpenRouter integration.
 Implements 7 specialized agents for end-to-end research automation.
@@ -24,24 +23,24 @@ Usage:
 
 __version__ = "1.0.0"
 
-from prowzi.workflows.orchestrator import ProwziOrchestrator
+from prowzi.agents.evaluation_agent import EvaluationAgent
 from prowzi.agents.intent_agent import IntentAgent
 from prowzi.agents.planning_agent import PlanningAgent
 from prowzi.agents.search_agent import SearchAgent
+from prowzi.agents.turnitin_agent import TurnitinAgent
 from prowzi.agents.verification_agent import VerificationAgent
 from prowzi.agents.writing_agent import WritingAgent
-from prowzi.agents.evaluation_agent import EvaluationAgent
-from prowzi.agents.turnitin_agent import TurnitinAgent
 from prowzi.config.settings import ProwziConfig
+from prowzi.workflows.orchestrator import ProwziOrchestrator
 
 __all__ = [
-    "ProwziOrchestrator",
+    "EvaluationAgent",
     "IntentAgent",
     "PlanningAgent",
+    "ProwziConfig",
+    "ProwziOrchestrator",
     "SearchAgent",
+    "TurnitinAgent",
     "VerificationAgent",
     "WritingAgent",
-    "EvaluationAgent",
-    "TurnitinAgent",
-    "ProwziConfig",
 ]

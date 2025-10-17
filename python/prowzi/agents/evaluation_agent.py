@@ -141,9 +141,9 @@ class EvaluationAgent:
         self.chat_client = OpenAIChatClient(
             api_key=self.config.openrouter_api_key,
             base_url=self.config.openrouter_base_url,
-            model=self.model_config.name,
-            temperature=self.agent_config.temperature,
-            max_tokens=self.agent_config.max_tokens,
+            model_id=self.model_config.name,
+            # NOTE: temperature and max_tokens not supported by OpenAIChatClient init
+            # These should be passed in ChatAgent.run() execution_settings instead
         )
 
         self.evaluator_agent = ChatAgent(
@@ -223,12 +223,17 @@ class EvaluationAgent:
             """
         ).strip()
 
+        draft_overview = textwrap.indent('\n\n'.join(section_summaries) or 'No sections generated.', '  ')
+        bibliography_preview = textwrap.indent('\n'.join(draft.bibliography[:10]) or 'None', '  ')
+        style_guidelines_text = textwrap.indent('\n'.join(draft.style_guidelines) or 'None', '  ')
+        verification_insights = textwrap.indent(verification_summary, '  ')
+
         context = (
             f"{requirements}\n\n{criteria_block}\n\nDraft Overview:\n"
-            f"{textwrap.indent('\n\n'.join(section_summaries) or 'No sections generated.', '  ')}\n\n"
-            f"Bibliography Preview:\n{textwrap.indent('\n'.join(draft.bibliography[:10]) or 'None', '  ')}\n\n"
-            f"Style Guidelines:\n{textwrap.indent('\n'.join(draft.style_guidelines) or 'None', '  ')}\n\n"
-            f"Verification Insights:\n{textwrap.indent(verification_summary, '  ')}\n\n"
+            f"{draft_overview}\n\n"
+            f"Bibliography Preview:\n{bibliography_preview}\n\n"
+            f"Style Guidelines:\n{style_guidelines_text}\n\n"
+            f"Verification Insights:\n{verification_insights}\n\n"
             f"Research Plan Metadata:\n  Total Tasks: {len(plan.execution_order)}\n"
             f"  Quality Checkpoints: {len(plan.quality_checkpoints)}\n"
             f"  Contingencies: {len(plan.contingencies)}\n\n"
@@ -450,4 +455,3 @@ class EvaluationAgent:
         if not json_block:
             raise ValueError("LLM response did not contain JSON")
         return json.loads(json_block)
-*** End Patch

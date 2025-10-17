@@ -1,21 +1,19 @@
-"""
-Document Parsing Tools
+"""Document Parsing Tools
 
 Handles PDF, DOCX, Markdown, and text file extraction.
 Optimized for large documents with streaming and chunking.
 """
 
-from pathlib import Path
-from typing import Dict, Any, List, Optional
 import mimetypes
+from pathlib import Path
+from typing import Any, Dict, List
 
 
 def parse_document(
     file_path: str | Path,
     extract_metadata: bool = True
 ) -> Dict[str, Any]:
-    """
-    Parse a document and extract text content and metadata.
+    """Parse a document and extract text content and metadata.
 
     Args:
         file_path: Path to the document file
@@ -177,8 +175,7 @@ def parse_multiple_documents(
     file_paths: List[str | Path],
     extract_metadata: bool = True
 ) -> List[Dict[str, Any]]:
-    """
-    Parse multiple documents in batch.
+    """Parse multiple documents in batch.
 
     Args:
         file_paths: List of paths to document files
@@ -204,8 +201,7 @@ def parse_multiple_documents(
 
 
 def extract_citations(text: str) -> List[str]:
-    """
-    Extract citations from text using common patterns.
+    """Extract citations from text using common patterns.
 
     Supports formats:
         - APA: (Author, Year)
@@ -224,11 +220,11 @@ def extract_citations(text: str) -> List[str]:
     citations = []
 
     # APA/Harvard style: (Author, Year) or (Author Year)
-    apa_pattern = r'\(([A-Z][a-z]+(?:,?\s+(?:et\s+al\.|&\s+[A-Z][a-z]+)?)\s*,?\s*\d{4}[a-z]?)\)'
+    apa_pattern = r"\(([A-Z][a-z]+(?:,?\s+(?:et\s+al\.|&\s+[A-Z][a-z]+)?)\s*,?\s*\d{4}[a-z]?)\)"
     citations.extend(re.findall(apa_pattern, text))
 
     # IEEE style: [1], [2-5]
-    ieee_pattern = r'\[(\d+(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)\]'
+    ieee_pattern = r"\[(\d+(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)\]"
     citations.extend(re.findall(ieee_pattern, text))
 
     return list(set(citations))  # Remove duplicates
@@ -240,8 +236,7 @@ def chunk_text(
     chunk_overlap: int = 100,
     separator: str = "\n\n"
 ) -> List[str]:
-    """
-    Split text into overlapping chunks for processing.
+    """Split text into overlapping chunks for processing.
 
     Useful for handling large documents that exceed model context windows.
 
